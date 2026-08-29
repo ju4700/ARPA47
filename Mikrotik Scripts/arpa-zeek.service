@@ -1,0 +1,17 @@
+[Unit]
+Description=ARPA Zeek Capture
+After=arpa-tzsp-decapper.service
+Requires=arpa-tzsp-decapper.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/data/arpa/zeek_logs
+ExecStartPre=/bin/sh -c 'for f in *.log; do [ -f "$f" ] && mv "$f" "${f%.log}_$(date +%Y%m%d_%H%M%S).log"; done || true'
+ExecStartPre=/usr/bin/sleep 2
+ExecStart=/usr/bin/zeek -i arpa-tap0 local
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

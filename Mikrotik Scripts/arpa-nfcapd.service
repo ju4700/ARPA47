@@ -1,0 +1,15 @@
+[Unit]
+Description=ARPA NetFlow Collector
+After=network.target
+
+[Service]
+Type=simple
+User=ju4700
+ExecStart=/usr/bin/nfcapd -D -w /data/arpa/netflow -p 2055 -t 300 -S 1 -z -P /data/arpa/netflow/nfcapd.pid
+Type=forking
+PIDFile=/data/arpa/netflow/nfcapd.pid
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
