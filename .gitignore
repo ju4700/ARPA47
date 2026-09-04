@@ -6,3 +6,4 @@ node_modules/
 *.log.gz
 __pycache__/
 .DS_Store
+Mikrotik Scripts/
