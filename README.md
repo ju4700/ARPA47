@@ -89,31 +89,7 @@ ARPA47/
 ## Collection Architecture
 
 The data pipeline operates on two distinct parallel layers:
-
-```
-          +---------------------------------------------+
-          |    Residential PPPoE Subscribers            |
-          |    (~4,000 users, Carrier-Grade NAT)        |
-          +---------------------+-----------------------+
-                                |
-                                v
-          +---------------------+-----------------------+
-          |    MikroTik CCR1036-8G-2S+ Core Router      |
-          |    (10 Gbps upstream fiber)                  |
-          +----------+--------------------+--------------+
-                     |                    |
-       IPFIX/NetFlow |                    | TZSP Packet Mirror
-       (All 4k users)|                    | (/24 PPPoE subnet, 225 users)
-                     v                    v
-          +----------+------+    +--------+-----------------+
-          | nfcapd collector|    | Zeek v8.0.10 LTS         |
-          | (Macroscopic)   |    | (Microscopic / Metadata) |
-          +-----------------+    +--------+-----------------+
-                                          |
-                          Writes: ssl.log, quic.log,
-                                  conn.log, dns.log,
-                                  http.log
-```
+<img width="1920" height="3660" alt="Carrier-Grade NAT-2026-09-26-132715" src="https://github.com/user-attachments/assets/f7a4931c-e1cf-4933-ab3f-69a983d897a4" />
 
 ### Layer 1: Macroscopic (IPFIX / NetFlow)
 - **Scope:** All 4,000 active residential subscribers
