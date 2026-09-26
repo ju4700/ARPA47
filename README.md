@@ -198,10 +198,3 @@ If you use this dataset or codebase in your research, please cite:
 The dataset is licensed under the **Creative Commons Attribution 4.0 International (CC BY 4.0)** license.
 The code in this repository is available for research and academic use.
 
----
-
-## Contact
-
-**Jalal Uddin**
-Linkup Communication, Chattogram, Bangladesh
-`jalal.dev.d@gmail.com`
