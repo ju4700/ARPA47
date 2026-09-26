@@ -89,7 +89,7 @@ ARPA47/
 ## Collection Architecture
 
 The data pipeline operates on two distinct parallel layers:
-<img width="1920" height="3660" alt="Carrier-Grade NAT-2026-09-26-132715" src="https://github.com/user-attachments/assets/f7a4931c-e1cf-4933-ab3f-69a983d897a4" />
+<img width="6031" height="1045" alt="mermaid-ai-diagram-2026-09-26-132845" src="https://github.com/user-attachments/assets/f5db55dc-f056-462a-baf6-b77604139194" />
 
 ### Layer 1: Macroscopic (IPFIX / NetFlow)
 - **Scope:** All 4,000 active residential subscribers
