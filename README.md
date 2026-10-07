@@ -119,7 +119,9 @@ All data collection adheres to the [Menlo Report](https://www.dhs.gov/sites/defa
 
 - **No payload capture:** Packet payloads were truncated at the interface level. Only connection metadata and cryptographic handshake headers were processed.
 - **Cryptographic IP anonymization:** All subscriber IPs in the `10.60.1.0/24` pool were anonymized using a salted, **prefix-preserving CryptoPan HMAC-SHA256** algorithm. The cryptographic salt was destroyed after the collection window.
-- **No MAC/PPPoE identifiers:** Layer-2 hardware identifiers were actively filtered and discarded.
+- **No MAC/PPPoE identifiers:** Layer-2 hardware identifiers (`orig_l2_addr`, `resp_l2_addr`, `mac`) were actively filtered and discarded.
+- **Credential and resource stripping:** Cleartext credentials and specific path endpoints in HTTP and Weird logs (`username`, `password`, `uri`, `referrer`, `addl`) were fully dropped from the dataset to eliminate residual PII risks.
+- **Domain truncation:** All domain string fields (`server_name`, `host`, `query`) were truncated to their effective Top-Level Domain plus one (eTLD+1) using Mozilla's Public Suffix List (e.g. `user-laptop.example.com` becomes `*.example.com`).
 - **Formal Ethics Certificate:** A signed Ethics Certificate is included in the Zenodo dataset: [`ETHICAL_COMPLIANCE_AND_DATA_SANITIZATION.pdf`](https://doi.org/10.5281/zenodo.22974122).
 
 ---

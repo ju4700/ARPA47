@@ -1,0 +1,55 @@
+=== RAW ZEEK DATASET STATISTICS ===
+
+Total Connections (conn.log) : 104,043,432
+Total TLS Sessions (ssl.log) : 1,084,562
+Total QUIC Sessions          : 1,442,258
+Total DNS Queries            : 2,191,056
+Total Weird Events           : 1,573,686
+
+--- TLS STATISTICS ---
+  TLSv13: 503,634
+  TLSv12: 57,955
+  unknown-64282: 13,777
+  DTLSv12: 327
+  TLSv11: 92
+  TLSv10: 31
+  DTLSv13: 3
+
+Top TLS Curves:
+  x25519: 288,509
+  X25519MLKEM768: 239,967
+  secp256r1: 5,405
+  secp384r1: 1,790
+  X25519Kyber768Draft00: 111
+
+Genuine ECH (cloudflare-ech.com): 1,192
+
+--- QUIC STATISTICS ---
+Missing SNI: 1,102,142 / 1,442,258
+  1: 1,126,731
+  mvfst (faceb002): 177,561
+  draft-29: 114,865
+
+--- DNS STATISTICS ---
+  A: 1,233,387
+  AAAA: 106,539
+  HTTPS: 76,725
+  PTR: 1,724
+  SVCB: 1,328
+  SRV: 552
+  TXT: 318
+  NS: 141
+  CNAME: 123
+  HINFO: 104
+
+--- WEIRD EVENTS (Top 10) ---
+  data_before_established: 497,009
+  possible_split_routing: 486,852
+  above_hole_data_without_any_acks: 187,102
+  TCP_ack_underflow_or_misorder: 183,335
+  TCP_seq_underflow_or_misorder: 79,513
+  truncated_tcp_payload: 40,057
+  inappropriate_FIN: 28,810
+  connection_originator_SYN_ack: 19,194
+  bad_TCP_checksum: 15,315
+  QUIC_many_protocols: 11,495
