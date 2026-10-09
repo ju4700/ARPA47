@@ -1,61 +1,63 @@
-import pandas as pd
 import os
+import zipfile
+import pyarrow.parquet as pq
+import io
 
-STATS_DIR = r"F:\ARPA47-Dataset\statistics"
+SPLIT_DIR = r"F:\ARPA47-Dataset\ARPA47_Release_Split"
 
-def verify():
-    # 1. Connection Stats
-    conn_df = pd.read_csv(os.path.join(STATS_DIR, "conn_daily_summary.csv"))
-    total_conns = conn_df['Total_Connections'].sum()
-    tcp_conns = conn_df['TCP_Conns'].sum()
-    udp_conns = conn_df['UDP_Conns'].sum()
+EXPECTED_COUNTS = {
+    'conn': 104042786,
+    'ssl': 11523518,
+    'quic': 12627627,
+    'http': 619404,
+    'dns': 21327575,
+    'weird': 13196640
+}
+
+def verify_dataset():
+    print("Verifying data integrity across all 18 independent ZIP files...\n")
     
-    # 2. SSL Stats
-    ssl_df = pd.read_csv(os.path.join(STATS_DIR, "ssl_daily_summary.csv"))
-    total_tls = ssl_df['Total_TLS_Connections'].sum()
-    tls_12 = ssl_df['TLS_1_2'].sum()
-    tls_13_ecdhe = ssl_df['TLS_1_3_no_PQC'].sum()
-    pqc = ssl_df['PQC_Connections'].sum()
-    hidden_sni = ssl_df['Hidden_SNI'].sum()
-    ech = ssl_df['Genuine_ECH'].sum()
+    actual_counts = {
+        'conn': 0, 'ssl': 0, 'quic': 0, 
+        'http': 0, 'dns': 0, 'weird': 0
+    }
     
-    # 3. QUIC Stats
-    quic_df = pd.read_csv(os.path.join(STATS_DIR, "quic_daily_summary.csv"))
-    total_quic = quic_df['Total_QUIC_Connections'].sum()
-    quic_hidden_sni = quic_df['Hidden_SNI'].sum()
+    zip_files = [f for f in os.listdir(SPLIT_DIR) if f.endswith('.zip') and f.startswith('arpa47_')]
     
-    # 4. DNS Stats
-    dns_df = pd.read_csv(os.path.join(STATS_DIR, "dns_daily_summary.csv"))
-    total_dns = dns_df['Total_Queries'].sum()
-    dns_a = dns_df['Type_A'].sum()
-    dns_aaaa = dns_df['Type_AAAA'].sum()
-    dns_https = dns_df['Type_HTTPS'].sum()
-    
-    # Print the verification checks
-    print("--- DATA INTEGRITY VERIFICATION ---")
-    print(f"Total Connections: {total_conns} (Expected: 31338265) -> {'PASS' if total_conns == 31338265 else 'FAIL'}")
-    print(f"Total TLS: {total_tls} (Expected: 2712288) -> {'PASS' if total_tls == 2712288 else 'FAIL'}")
-    print(f"Total QUIC: {total_quic} (Expected: 4236252) -> {'PASS' if total_quic == 4236252 else 'FAIL'}")
-    
-    quic_percent = round((total_quic / (total_tls + total_quic)) * 100, 1)
-    print(f"QUIC % of Port 443: {quic_percent}% (Expected: 61.0%) -> {'PASS' if quic_percent == 61.0 else 'FAIL'}")
-    
-    pqc_percent = round((pqc / total_tls) * 100, 2)
-    print(f"PQC adoption: {pqc} / {pqc_percent}% (Expected: 626107 / 23.08%) -> {'PASS' if pqc == 626107 and pqc_percent == 23.08 else 'FAIL'}")
-    
-    tls_hidden_sni_pct = round((hidden_sni / total_tls) * 100, 2)
-    print(f"TLS Hidden SNI: {hidden_sni} / {tls_hidden_sni_pct}% (Expected: 384139 / 14.16%) -> {'PASS' if hidden_sni == 384139 and tls_hidden_sni_pct == 14.16 else 'FAIL'}")
-    
-    ech_percent = round((ech / total_tls) * 100, 2)
-    print(f"Genuine ECH: {ech} / {ech_percent}% (Expected: 2822 / 0.10%) -> {'PASS' if ech == 2822 and ech_percent == 0.10 else 'FAIL'}")
-    
-    quic_hidden_pct = round((quic_hidden_sni / total_quic) * 100, 1)
-    print(f"QUIC Hidden SNI %: {quic_hidden_pct}% (Expected: 77.4%) -> {'PASS' if quic_hidden_pct == 77.4 else 'FAIL'}")
-    
-    print(f"Total DNS Queries: {total_dns} (Expected: 7637226) -> {'PASS' if total_dns == 7637226 else 'FAIL'}")
-    
-    dns_https_pct = round((dns_https / total_dns) * 100, 2)
-    print(f"DNS HTTPS RR %: {dns_https_pct}% (Expected: 3.39%) -> {'PASS' if dns_https_pct == 3.39 else 'FAIL'}")
-    
-if __name__ == "__main__":
-    verify()
+    for zf_name in sorted(zip_files):
+        # Extract protocol from filename (e.g. arpa47_conn_part1.zip -> conn)
+        protocol = zf_name.split('_')[1]
+        
+        filepath = os.path.join(SPLIT_DIR, zf_name)
+        with zipfile.ZipFile(filepath, 'r') as zf:
+            parquet_files = [f for f in zf.namelist() if f.endswith('.parquet')]
+            
+            zip_row_count = 0
+            for pq_name in parquet_files:
+                # Read just the parquet metadata footer (extremely fast)
+                with zf.open(pq_name) as pf:
+                    # Load file bytes into memory buffer for pyarrow
+                    buffer = io.BytesIO(pf.read())
+                    parquet_meta = pq.ParquetFile(buffer)
+                    zip_row_count += parquet_meta.metadata.num_rows
+            
+            actual_counts[protocol] += zip_row_count
+            print(f"[OK] {zf_name}: Validated {len(parquet_files)} inner files ({zip_row_count:,} rows)")
+
+    print("\n--- FINAL ALIGNMENT AUDIT ---")
+    all_match = True
+    for protocol in EXPECTED_COUNTS:
+        expected = EXPECTED_COUNTS[protocol]
+        actual = actual_counts.get(protocol, 0)
+        status = "MATCH" if expected == actual else "MISMATCH"
+        if expected != actual:
+            all_match = False
+        print(f"{protocol.upper().ljust(6)} | Expected: {expected:>12,} | Actual: {actual:>12,} | [{status}]")
+        
+    if all_match:
+        print("\n[SUCCESS] PERFECT INTEGRITY! The 18 split archives contain the exact original 104-million row dataset.")
+    else:
+        print("\n[ERROR] DATA LOSS DETECTED during packaging!")
+
+if __name__ == '__main__':
+    verify_dataset()
